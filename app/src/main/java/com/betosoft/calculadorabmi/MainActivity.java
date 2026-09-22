@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private TextView txtResultado;
     private EditText edtPeso, edtEstatura;
     private Button btnCalculo;
@@ -22,13 +22,20 @@ public class MainActivity extends AppCompatActivity {
         edtPeso = findViewById(R.id.edtPeso);
         edtEstatura = findViewById(R.id.edtEstatura);
         btnCalculo = findViewById(R.id.btnCalculo);
+
+        btnCalculo.setOnClickListener(this);
     }
 
-    public void calculaBMI(View v)
+    public void calculaBMI()
     {
         int masa = Integer.parseInt( edtPeso.getText().toString() );
         double estatura = Double.parseDouble( edtEstatura.getText().toString() ) / 100.0;
         double bmi = masa / Math.pow(estatura,2);
         txtResultado.setText( "Su BMIv es " + String.valueOf(bmi));  // Hard coded. Se resolverá mas tarde
+    }
+
+    @Override
+    public void onClick(View view) {
+        calculaBMI();
     }
 }

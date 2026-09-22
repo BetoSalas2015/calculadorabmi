@@ -1,106 +1,105 @@
-# Calculadora de BMI para Android
+## Gestión de Eventos Centralizada
 
-Aplicación Android que calcula el **índice de masa corporal** (*Body Mass Index*, BMI) a partir del peso y la estatura proporcionados por el usuario.
+En esta actualización, la gestión del evento `click` deja de realizarse mediante el atributo `android:onClick` del archivo XML.
 
-Este primer commit incluye la creación de la interfaz, la referencia de sus componentes desde Java, el cálculo del BMI y la gestión del evento `click` mediante un atributo XML.
+Ahora se utiliza el modelo **source/listener**, en el que intervienen dos elementos:
 
-## Objetivo
+- **Source:** objeto que genera el evento. En este proyecto es el botón `btnCalculo`.
+- **Listener:** objeto responsable de recibir el evento y ejecutar una acción. En este caso es la propia actividad `MainActivity`.
 
-Practicar los fundamentos del desarrollo de actividades en Android:
+Se considera una gestión centralizada porque `MainActivity` administra directamente los eventos generados por los componentes de su interfaz.
 
-- Crear una interfaz mediante XML.
-- Definir recursos de texto en `strings.xml`.
-- Asociar una actividad con su archivo de diseño.
-- Referenciar componentes mediante `findViewById()`.
-- Leer información de componentes `EditText`.
-- Manipular un componente `TextView` desde Java.
-- Gestionar eventos mediante el atributo XML `android:onClick`.
+### Implementación de `OnClickListener`
 
-## Fórmula utilizada
+La actividad implementa la interfaz `View.OnClickListener`:
 
-El BMI se calcula mediante la siguiente fórmula:
+```java
+public class MainActivity extends AppCompatActivity
+        implements View.OnClickListener
+```
 
-\[
-BMI = masa en kg / (estatura en m)^2
-\]
+Esta interfaz obliga a implementar el método:
 
-La aplicación solicita la estatura en centímetros, por lo que primero debe convertirla a metros.
+```java
+@Override
+public void onClick(View view) {
+    calculaBMI();
+}
+```
 
-## Interfaz de usuario
+Cuando ocurre el evento, `onClick()` invoca el método encargado de calcular y mostrar el BMI.
 
-La aplicación contiene los siguientes componentes:
+### Registro del listener
 
-| Componente | Identificador | Función |
-|---|---|---|
-| `TextView` | `txtPeso` | Muestra la etiqueta para capturar el peso. |
-| `EditText` | `edtPeso` | Permite introducir el peso en kilogramos. |
-| `TextView` | `txtAltura` | Muestra la etiqueta para capturar la estatura. |
-| `EditText` | `edtEstatura` | Permite introducir la estatura en centímetros. |
-| `Button` | `btnCalculo` | Inicia el cálculo del BMI. |
-| `TextView` | `txtResultado` | Muestra el resultado del cálculo. |
+Después de obtener la referencia al botón mediante `findViewById()`, la actividad se registra como su listener:
 
+```java
+btnCalculo = findViewById(R.id.btnCalculo);
+btnCalculo.setOnClickListener(this);
+```
 
-## Gestión del evento
+El argumento `this` representa la instancia actual de `MainActivity`, que puede actuar como listener porque implementa `View.OnClickListener`.
 
-En este primer commit, el evento `click` se gestiona mediante el atributo XML:
+### Cambio en el archivo XML
+
+El botón ya no necesita declarar el atributo:
 
 ```xml
 android:onClick="calculaBMI"
 ```
 
-Cuando el usuario presiona el botón, Android busca en la actividad el siguiente método:
+La relación entre el botón y el manejador del evento se establece completamente desde Java mediante `setOnClickListener()`.
+
+### Flujo del evento
+
+1. El usuario introduce su peso y estatura.
+2. El usuario presiona el botón **Calcular**.
+3. `btnCalculo` genera un evento `click`.
+4. El botón notifica el evento al listener registrado.
+5. Android ejecuta el método `onClick()`.
+6. `onClick()` invoca `calculaBMI()`.
+7. La aplicación calcula el BMI y muestra el resultado.
+
+## Ventajas de la gestión centralizada
+
+- Mantiene la lógica de eventos dentro de la actividad.
+- Evita depender del atributo `android:onClick`.
+- Permite comprobar errores durante la compilación.
+- Facilita que una actividad atienda eventos de varios componentes.
+- Aplica explícitamente el modelo `source/listener` de Android.
+
+Si la actividad administra varios componentes, el parámetro recibido por `onClick()` puede utilizarse para identificar cuál generó el evento:
 
 ```java
-public void calculaBMI(View view)
+@Override
+public void onClick(View view) {
+    if (view.getId() == R.id.btnCalculo) {
+        calculaBMI();
+    }
+}
 ```
 
-El método debe cumplir estas condiciones:
+En la versión actual solo existe un botón generador de eventos, por lo que no es necesario realizar esta comprobación.
 
-- Ser `public`.
-- Devolver `void`.
-- Recibir un objeto `View` como parámetro.
-- Tener el mismo nombre especificado en `android:onClick`.
+## Alcance de esta actualización
 
-## Flujo de la aplicación
+Esta actualización incluye:
 
-1. El usuario introduce su peso en kilogramos.
-2. El usuario introduce su estatura en centímetros.
-3. El usuario presiona el botón **Calcular**.
-4. Android invoca el método `calculaBMI(View view)`.
-5. La estatura se convierte de centímetros a metros.
-6. La aplicación calcula el BMI.
-7. El resultado se muestra en `txtResultado`.
-
-## Alcance de este commit
-
-Este primer commit incluye:
-
-- [x] Creación del proyecto Android.
-- [x] Creación de `MainActivity`.
-- [x] Diseño de la interfaz de usuario.
-- [x] Definición de recursos en `strings.xml`.
-- [x] Referencia de componentes mediante `findViewById()`.
-- [x] Lectura del peso y la estatura.
-- [x] Conversión de centímetros a metros.
-- [x] Cálculo del BMI.
-- [x] Presentación del resultado.
-- [x] Gestión del evento `click` mediante `android:onClick`.
+- [x] Implementación de `View.OnClickListener` en `MainActivity`.
+- [x] Implementación del método `onClick()`.
+- [x] Registro del botón mediante `setOnClickListener()`.
+- [x] Uso de la actividad como listener mediante `this`.
+- [x] Invocación de `calculaBMI()` desde `onClick()`.
+- [x] Eliminación del atributo `android:onClick` del botón.
+- [x] Aplicación del modelo `source/listener`.
 
 Todavía no se incluyen:
 
+- Gestión descentralizada mediante una clase interna.
+- Clases anónimas.
+- Expresiones lambda.
 - Validación de campos vacíos.
 - Manejo de valores incorrectos.
 - Clasificación del resultado del BMI.
-- Gestión de eventos mediante listeners.
-- Clases anónimas o expresiones lambda.
 - Persistencia de información.
 - Manejo de cambios de configuración.
-
-## Ejecución
-
-1. Abrir el proyecto en Android Studio.
-2. Sincronizar las dependencias de Gradle.
-3. Seleccionar un emulador o dispositivo Android.
-4. Ejecutar la aplicación.
-5. Introducir el peso y la estatura.
-6. Presionar **Calcular** para mostrar el BMI.
