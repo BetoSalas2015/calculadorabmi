@@ -1,22 +1,30 @@
-## Gestión de eventos mediante una clase interna
+## Gestión de eventos mediante una clase anónima
 
-En esta actualización, `MainActivity` deja de actuar directamente como listener. La responsabilidad de atender el evento `click` se delega a una **clase interna** llamada `CalculaBMI`.
+En esta actualización, el evento `click` del botón se gestiona mediante una **clase anónima**.
 
-Este modelo aplica una gestión descentralizada de eventos:
+Una clase anónima es una clase sin nombre que se declara y se instancia al mismo tiempo. En este proyecto, la clase anónima implementa `View.OnClickListener` directamente durante el registro del listener.
 
-- **Source:** el botón `btnCalculo`, que genera el evento.
-- **Listener:** una instancia de la clase interna `CalculaBMI`.
-- **Acción:** invocar el método `calculaBMI()` de la actividad.
+Este enfoque elimina la necesidad de mantener la clase interna `CalculaBMI`.
 
-## Clase interna `CalculaBMI`
+## Registro del listener
 
-Dentro de `MainActivity` se declara una clase privada que implementa la interfaz `View.OnClickListener`:
+Después de obtener la referencia al botón, se crea una clase anónima dentro de `setOnClickListener()`:
 
 ```java
-private class CalculaBMI implements View.OnClickListener
+btnCalculo.setOnClickListener(new View.OnClickListener() {
+    // Implementación de onClick()
+});
 ```
 
-Al implementar esta interfaz, la clase interna debe sobrescribir el método `onClick()`:
+La expresión:
+
+```java
+new View.OnClickListener()
+```
+
+crea una instancia anónima de una clase que implementa la interfaz `View.OnClickListener`.
+
+Como esta interfaz define el método `onClick()`, la clase anónima debe proporcionar su implementación:
 
 ```java
 @Override
@@ -25,96 +33,87 @@ public void onClick(View view) {
 }
 ```
 
-Cuando el botón genera el evento, Android ejecuta este método. La clase interna puede invocar directamente `calculaBMI()` porque pertenece a una instancia de `MainActivity`.
+Cuando el usuario presiona el botón, Android ejecuta el método `onClick()` de esta clase anónima, que a su vez invoca `calculaBMI()`.
 
-## Registro del listener
+## Cambios respecto a la clase interna
 
-Después de obtener la referencia del botón, se crea una instancia de `CalculaBMI` y se registra como listener:
+En la versión anterior se utilizaba una clase interna con nombre:
 
 ```java
-btnCalculo = findViewById(R.id.btnCalculo);
+private class CalculaBMI implements View.OnClickListener
+```
+
+Posteriormente, se creaba una instancia para registrarla como listener:
+
+```java
 btnCalculo.setOnClickListener(new CalculaBMI());
-```
-
-La expresión:
-
-```java
-new CalculaBMI()
-```
-
-crea un objeto de la clase interna. Este objeto se convierte en el responsable de recibir y procesar los eventos `click` del botón.
-
-## Cambios respecto a la gestión centralizada
-
-En la versión anterior, `MainActivity` implementaba directamente `View.OnClickListener`:
-
-```java
-public class MainActivity extends AppCompatActivity
-        implements View.OnClickListener
-```
-
-Además, la propia actividad se registraba como listener mediante:
-
-```java
-btnCalculo.setOnClickListener(this);
 ```
 
 En esta actualización:
 
-- `MainActivity` ya no implementa `View.OnClickListener`.
-- El método `onClick()` deja de pertenecer directamente a la actividad.
-- La clase interna `CalculaBMI` implementa `View.OnClickListener`.
-- El botón recibe una instancia de `CalculaBMI` como listener.
-- El método `calculaBMI()` permanece en `MainActivity`.
+- Se elimina la clase interna `CalculaBMI`.
+- Se elimina la expresión `new CalculaBMI()`.
+- La implementación de `View.OnClickListener` se coloca directamente en `setOnClickListener()`.
+- El método `onClick()` se declara dentro de la clase anónima.
+- `onClick()` continúa invocando el método `calculaBMI()` de la actividad.
 
 ## Flujo del evento
 
-1. La actividad obtiene la referencia al botón `btnCalculo`.
-2. Se crea una instancia de la clase interna `CalculaBMI`.
-3. La instancia se registra mediante `setOnClickListener()`.
+1. `MainActivity` obtiene la referencia al botón `btnCalculo`.
+2. Se crea una clase anónima que implementa `View.OnClickListener`.
+3. La instancia anónima se registra mediante `setOnClickListener()`.
 4. El usuario presiona el botón.
-5. `btnCalculo` genera el evento `click`.
-6. Android ejecuta el método `onClick()` de `CalculaBMI`.
-7. `onClick()` invoca el método `calculaBMI()`.
+5. El botón genera el evento `click`.
+6. Android ejecuta el método `onClick()` de la clase anónima.
+7. `onClick()` invoca `calculaBMI()`.
 8. La aplicación calcula el BMI y muestra el resultado.
 
-## Ventajas de utilizar una clase interna
+## Ventajas de una clase anónima
 
-- Separa el manejo del evento de las responsabilidades principales de la actividad.
-- Evita que `MainActivity` implemente directamente la interfaz del listener.
-- Agrupa la lógica relacionada con un evento específico.
-- Permite crear diferentes listeners para distintos componentes.
-- La clase interna puede acceder a los atributos y métodos de `MainActivity`.
-- Facilita la reutilización del listener dentro de la misma actividad.
+- Evita declarar una clase interna con nombre.
+- Mantiene el listener cerca del componente que genera el evento.
+- Reduce la cantidad de elementos declarados en la actividad.
+- Resulta apropiada cuando el listener se utiliza una sola vez.
+- Puede acceder a los atributos y métodos de `MainActivity`.
+- Facilita la lectura de listeners breves y específicos.
 
 ## Consideraciones
 
-La clase `CalculaBMI` se declara como `private` porque solamente se utiliza dentro de `MainActivity`:
+Una clase anónima no puede instanciarse posteriormente por su nombre ni reutilizarse directamente en otros lugares.
+
+Este enfoque es adecuado cuando:
+
+- El listener se utiliza una sola vez.
+- La implementación de `onClick()` es breve.
+- La lógica del evento pertenece exclusivamente al componente registrado.
+
+Si el listener contiene muchas instrucciones o debe utilizarse en varios componentes, puede ser más conveniente utilizar una clase con nombre.
+
+La operación principal se mantiene en el método `calculaBMI()`. De esta manera, la clase anónima solo recibe el evento y delega el procesamiento:
 
 ```java
-private class CalculaBMI
+@Override
+public void onClick(View view) {
+    calculaBMI();
+}
 ```
 
-Este listener sigue dependiendo de la actividad, por lo que no está diseñado para reutilizarse directamente desde otras clases.
-
-Si su implementación solo se utiliza una vez y contiene pocas instrucciones, posteriormente puede sustituirse por una clase anónima o una expresión lambda.
+Esta separación evita colocar toda la lógica del cálculo dentro del listener.
 
 ## Alcance de esta actualización
 
 Esta actualización incluye:
 
-- [x] Eliminación de `View.OnClickListener` de la declaración de `MainActivity`.
-- [x] Creación de la clase interna privada `CalculaBMI`.
-- [x] Implementación de `View.OnClickListener` en la clase interna.
-- [x] Implementación de `onClick()` dentro de `CalculaBMI`.
-- [x] Invocación de `calculaBMI()` desde el listener.
-- [x] Creación de una instancia mediante `new CalculaBMI()`.
-- [x] Registro de la instancia con `setOnClickListener()`.
-- [x] Separación de la gestión del evento respecto de la actividad principal.
+- [x] Eliminación de la clase interna `CalculaBMI`.
+- [x] Creación de una clase anónima.
+- [x] Implementación de `View.OnClickListener` durante el registro.
+- [x] Implementación de `onClick()` dentro de la clase anónima.
+- [x] Invocación de `calculaBMI()` desde `onClick()`.
+- [x] Registro directo del listener mediante `setOnClickListener()`.
+- [x] Conservación de la lógica del cálculo en un método separado.
 
 Todavía no se incluyen:
 
-- Clases anónimas.
 - Expresiones lambda.
 - Validación de campos vacíos.
 - Manejo de valores incorrectos.

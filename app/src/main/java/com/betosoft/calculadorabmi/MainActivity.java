@@ -23,7 +23,12 @@ public class MainActivity extends AppCompatActivity {
         edtEstatura = findViewById(R.id.edtEstatura);
         btnCalculo = findViewById(R.id.btnCalculo);
 
-        btnCalculo.setOnClickListener(new CalculaBMI());
+        btnCalculo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                calculaBMI();
+            }
+        });
     }
 
     public void calculaBMI()
@@ -34,12 +39,4 @@ public class MainActivity extends AppCompatActivity {
         txtResultado.setText( "Su BMIv es " + String.valueOf(bmi));  // Hard coded. Se resolverá mas tarde
     }
 
-
-    private class CalculaBMI implements View.OnClickListener {
-
-        @Override
-        public void onClick(View view) {
-            calculaBMI();
-        }
-    }
 }
