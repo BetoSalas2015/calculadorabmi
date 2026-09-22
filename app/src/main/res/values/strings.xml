@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Calculadora BMI</string>
+    <string name="peso">Tu peso en Kilogramos:</string>
+    <string name="estatura">Tu estatura en Centímetros:</string>
+    <string name="calcular">Calcular</string>
+    <string name="bmi">Tu BMI es: </string>
+</resources>
