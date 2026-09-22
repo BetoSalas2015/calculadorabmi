@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity {
     private TextView txtResultado;
     private EditText edtPeso, edtEstatura;
     private Button btnCalculo;
@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         edtEstatura = findViewById(R.id.edtEstatura);
         btnCalculo = findViewById(R.id.btnCalculo);
 
-        btnCalculo.setOnClickListener(this);
+        btnCalculo.setOnClickListener(new CalculaBMI());
     }
 
     public void calculaBMI()
@@ -34,8 +34,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         txtResultado.setText( "Su BMIv es " + String.valueOf(bmi));  // Hard coded. Se resolverá mas tarde
     }
 
-    @Override
-    public void onClick(View view) {
-        calculaBMI();
+
+    private class CalculaBMI implements View.OnClickListener {
+
+        @Override
+        public void onClick(View view) {
+            calculaBMI();
+        }
     }
 }

@@ -1,24 +1,22 @@
-## Gestión de Eventos Centralizada
+## Gestión de eventos mediante una clase interna
 
-En esta actualización, la gestión del evento `click` deja de realizarse mediante el atributo `android:onClick` del archivo XML.
+En esta actualización, `MainActivity` deja de actuar directamente como listener. La responsabilidad de atender el evento `click` se delega a una **clase interna** llamada `CalculaBMI`.
 
-Ahora se utiliza el modelo **source/listener**, en el que intervienen dos elementos:
+Este modelo aplica una gestión descentralizada de eventos:
 
-- **Source:** objeto que genera el evento. En este proyecto es el botón `btnCalculo`.
-- **Listener:** objeto responsable de recibir el evento y ejecutar una acción. En este caso es la propia actividad `MainActivity`.
+- **Source:** el botón `btnCalculo`, que genera el evento.
+- **Listener:** una instancia de la clase interna `CalculaBMI`.
+- **Acción:** invocar el método `calculaBMI()` de la actividad.
 
-Se considera una gestión centralizada porque `MainActivity` administra directamente los eventos generados por los componentes de su interfaz.
+## Clase interna `CalculaBMI`
 
-### Implementación de `OnClickListener`
-
-La actividad implementa la interfaz `View.OnClickListener`:
+Dentro de `MainActivity` se declara una clase privada que implementa la interfaz `View.OnClickListener`:
 
 ```java
-public class MainActivity extends AppCompatActivity
-        implements View.OnClickListener
+private class CalculaBMI implements View.OnClickListener
 ```
 
-Esta interfaz obliga a implementar el método:
+Al implementar esta interfaz, la clase interna debe sobrescribir el método `onClick()`:
 
 ```java
 @Override
@@ -27,75 +25,95 @@ public void onClick(View view) {
 }
 ```
 
-Cuando ocurre el evento, `onClick()` invoca el método encargado de calcular y mostrar el BMI.
+Cuando el botón genera el evento, Android ejecuta este método. La clase interna puede invocar directamente `calculaBMI()` porque pertenece a una instancia de `MainActivity`.
 
-### Registro del listener
+## Registro del listener
 
-Después de obtener la referencia al botón mediante `findViewById()`, la actividad se registra como su listener:
+Después de obtener la referencia del botón, se crea una instancia de `CalculaBMI` y se registra como listener:
 
 ```java
 btnCalculo = findViewById(R.id.btnCalculo);
+btnCalculo.setOnClickListener(new CalculaBMI());
+```
+
+La expresión:
+
+```java
+new CalculaBMI()
+```
+
+crea un objeto de la clase interna. Este objeto se convierte en el responsable de recibir y procesar los eventos `click` del botón.
+
+## Cambios respecto a la gestión centralizada
+
+En la versión anterior, `MainActivity` implementaba directamente `View.OnClickListener`:
+
+```java
+public class MainActivity extends AppCompatActivity
+        implements View.OnClickListener
+```
+
+Además, la propia actividad se registraba como listener mediante:
+
+```java
 btnCalculo.setOnClickListener(this);
 ```
 
-El argumento `this` representa la instancia actual de `MainActivity`, que puede actuar como listener porque implementa `View.OnClickListener`.
+En esta actualización:
 
-### Cambio en el archivo XML
+- `MainActivity` ya no implementa `View.OnClickListener`.
+- El método `onClick()` deja de pertenecer directamente a la actividad.
+- La clase interna `CalculaBMI` implementa `View.OnClickListener`.
+- El botón recibe una instancia de `CalculaBMI` como listener.
+- El método `calculaBMI()` permanece en `MainActivity`.
 
-El botón ya no necesita declarar el atributo:
+## Flujo del evento
 
-```xml
-android:onClick="calculaBMI"
-```
+1. La actividad obtiene la referencia al botón `btnCalculo`.
+2. Se crea una instancia de la clase interna `CalculaBMI`.
+3. La instancia se registra mediante `setOnClickListener()`.
+4. El usuario presiona el botón.
+5. `btnCalculo` genera el evento `click`.
+6. Android ejecuta el método `onClick()` de `CalculaBMI`.
+7. `onClick()` invoca el método `calculaBMI()`.
+8. La aplicación calcula el BMI y muestra el resultado.
 
-La relación entre el botón y el manejador del evento se establece completamente desde Java mediante `setOnClickListener()`.
+## Ventajas de utilizar una clase interna
 
-### Flujo del evento
+- Separa el manejo del evento de las responsabilidades principales de la actividad.
+- Evita que `MainActivity` implemente directamente la interfaz del listener.
+- Agrupa la lógica relacionada con un evento específico.
+- Permite crear diferentes listeners para distintos componentes.
+- La clase interna puede acceder a los atributos y métodos de `MainActivity`.
+- Facilita la reutilización del listener dentro de la misma actividad.
 
-1. El usuario introduce su peso y estatura.
-2. El usuario presiona el botón **Calcular**.
-3. `btnCalculo` genera un evento `click`.
-4. El botón notifica el evento al listener registrado.
-5. Android ejecuta el método `onClick()`.
-6. `onClick()` invoca `calculaBMI()`.
-7. La aplicación calcula el BMI y muestra el resultado.
+## Consideraciones
 
-## Ventajas de la gestión centralizada
-
-- Mantiene la lógica de eventos dentro de la actividad.
-- Evita depender del atributo `android:onClick`.
-- Permite comprobar errores durante la compilación.
-- Facilita que una actividad atienda eventos de varios componentes.
-- Aplica explícitamente el modelo `source/listener` de Android.
-
-Si la actividad administra varios componentes, el parámetro recibido por `onClick()` puede utilizarse para identificar cuál generó el evento:
+La clase `CalculaBMI` se declara como `private` porque solamente se utiliza dentro de `MainActivity`:
 
 ```java
-@Override
-public void onClick(View view) {
-    if (view.getId() == R.id.btnCalculo) {
-        calculaBMI();
-    }
-}
+private class CalculaBMI
 ```
 
-En la versión actual solo existe un botón generador de eventos, por lo que no es necesario realizar esta comprobación.
+Este listener sigue dependiendo de la actividad, por lo que no está diseñado para reutilizarse directamente desde otras clases.
+
+Si su implementación solo se utiliza una vez y contiene pocas instrucciones, posteriormente puede sustituirse por una clase anónima o una expresión lambda.
 
 ## Alcance de esta actualización
 
 Esta actualización incluye:
 
-- [x] Implementación de `View.OnClickListener` en `MainActivity`.
-- [x] Implementación del método `onClick()`.
-- [x] Registro del botón mediante `setOnClickListener()`.
-- [x] Uso de la actividad como listener mediante `this`.
-- [x] Invocación de `calculaBMI()` desde `onClick()`.
-- [x] Eliminación del atributo `android:onClick` del botón.
-- [x] Aplicación del modelo `source/listener`.
+- [x] Eliminación de `View.OnClickListener` de la declaración de `MainActivity`.
+- [x] Creación de la clase interna privada `CalculaBMI`.
+- [x] Implementación de `View.OnClickListener` en la clase interna.
+- [x] Implementación de `onClick()` dentro de `CalculaBMI`.
+- [x] Invocación de `calculaBMI()` desde el listener.
+- [x] Creación de una instancia mediante `new CalculaBMI()`.
+- [x] Registro de la instancia con `setOnClickListener()`.
+- [x] Separación de la gestión del evento respecto de la actividad principal.
 
 Todavía no se incluyen:
 
-- Gestión descentralizada mediante una clase interna.
 - Clases anónimas.
 - Expresiones lambda.
 - Validación de campos vacíos.
