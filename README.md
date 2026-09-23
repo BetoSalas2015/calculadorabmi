@@ -1,150 +1,179 @@
-## Gestión de eventos mediante expresiones lambda
+## Persistencia con `SharedPreferences`
 
-En esta actualización, la clase anónima utilizada para gestionar el evento `click` se sustituye por una **expresión lambda**.
+En esta actualización, la aplicación utiliza `SharedPreferences` para conservar el peso y la estatura introducidos por el usuario.
 
-Una expresión lambda es una forma breve de implementar una función que se utilizará en un lugar específico. En Java, puede emplearse con interfaces funcionales, es decir, interfaces que contienen un único método abstracto.
+`SharedPreferences` permite almacenar información sencilla como pares **clave-valor** dentro de un archivo XML privado de la aplicación.
 
-`View.OnClickListener` es una interfaz funcional porque define solamente el método:
+En este proyecto se almacenan dos valores:
 
-```java
-void onClick(View view);
-```
+| Clave | Valor |
+|---|---|
+| `peso` | Peso introducido por el usuario. |
+| `estatura` | Estatura introducida por el usuario. |
 
-Por esta razón, su implementación puede representarse mediante una expresión lambda.
+Ambos valores se guardan como cadenas de texto porque provienen de componentes `EditText`.
 
-## Sintaxis de una expresión lambda
+## Guardado durante el ciclo de vida
 
-La estructura general de una expresión lambda es:
-
-```java
-parámetros -> acción
-```
-
-En el listener del botón se utiliza:
+La información se almacena cuando la actividad entra en pausa:
 
 ```java
-view -> calculaBMI()
-```
-
-Sus elementos son:
-
-- `view`: parámetro recibido por el método `onClick()`.
-- `->`: operador lambda que separa los parámetros de la implementación.
-- `calculaBMI()`: acción que se ejecuta cuando ocurre el evento.
-
-## Registro del listener
-
-El botón registra el listener mediante una sola instrucción:
-
-```java
-btnCalculo.setOnClickListener(view -> calculaBMI());
-```
-
-Cuando el usuario presiona el botón:
-
-1. Android detecta el evento `click`.
-2. Se ejecuta la expresión lambda.
-3. La lambda recibe el objeto `View` que generó el evento.
-4. Se invoca el método `calculaBMI()`.
-5. La aplicación calcula y muestra el BMI.
-
-## Cambio respecto a la clase anónima
-
-En la versión anterior, el listener se implementaba mediante una clase anónima:
-
-```java
-new View.OnClickListener() {
-    @Override
-    public void onClick(View view) {
-        calculaBMI();
-    }
+@Override
+protected void onPause() {
+    super.onPause();
+    guardarDatos();
 }
 ```
 
-La expresión lambda representa el mismo comportamiento:
+`onPause()` puede ejecutarse cuando:
+
+- El usuario abre otra actividad.
+- Presiona el botón de inicio.
+- Aparece otra interfaz sobre la aplicación.
+- La aplicación deja de estar en primer plano.
+
+El guardado puede concentrarse en un método independiente para evitar repetir instrucciones:
 
 ```java
-view -> calculaBMI()
-```
-
-En esta actualización:
-
-- Se elimina la declaración explícita de `new View.OnClickListener()`.
-- Se elimina la anotación `@Override`.
-- Se elimina la declaración explícita del método `onClick()`.
-- Se conserva el parámetro `view`.
-- Se conserva la llamada a `calculaBMI()`.
-- El código del listener se vuelve más breve.
-
-## Lambdas con varias instrucciones
-
-Cuando una lambda ejecuta una sola instrucción, no necesita llaves:
-
-```java
-view -> calculaBMI()
-```
-
-Si debe ejecutar varias instrucciones, se utiliza un bloque:
-
-```java
-view -> {
-    calculaBMI();
-    // Otra instrucción
+private void guardarDatos() {
+    // Obtener los textos y guardarlos en SharedPreferences.
 }
 ```
 
-Las instrucciones del bloque deben terminar con punto y coma.
+## `onSaveInstanceState()`
 
-## Parámetro no utilizado
-
-La interfaz `View.OnClickListener` proporciona el componente que generó el evento mediante el parámetro `view`.
-
-Aunque el cálculo actual no utiliza directamente este parámetro, debe declararse porque forma parte de la firma de `onClick()`:
+`onSaveInstanceState()` está pensado principalmente para conservar el estado temporal de la interfaz cuando Android puede recrear la actividad, por ejemplo, después de un cambio de configuración.
 
 ```java
-view -> calculaBMI()
+@Override
+protected void onSaveInstanceState(@NonNull Bundle outState) {
+    super.onSaveInstanceState(outState);
+}
 ```
 
-Si un mismo listener atendiera varios componentes, `view` podría utilizarse para identificar cuál generó el evento.
-
-## Ventajas de las expresiones lambda
-
-- Reducen la cantidad de código repetitivo.
-- Evitan crear una clase interna o anónima explícita.
-- Mantienen el comportamiento cerca del componente que genera el evento.
-- Mejoran la legibilidad cuando la acción es breve.
-- Permiten expresar claramente la relación entre el evento y la acción.
-- Son apropiadas para listeners que se utilizan una sola vez.
-
-## Consideraciones
-
-Las expresiones lambda son recomendables cuando la implementación es corta y fácil de comprender.
-
-Si la lógica del evento es extensa, conviene mantenerla en un método separado y utilizar la lambda únicamente para invocarlo:
+Para información temporal puede utilizarse el objeto `Bundle`:
 
 ```java
-view -> calculaBMI()
+outState.putString("peso", edtPeso.getText().toString());
+outState.putString("estatura", edtEstatura.getText().toString());
 ```
 
-Esto evita colocar toda la lógica de cálculo dentro del listener y conserva una separación clara de responsabilidades.
+Sin embargo, `onSaveInstanceState()` no sustituye al almacenamiento persistente, ya que no se garantiza su ejecución cuando el usuario cierra voluntariamente la aplicación.
 
-Si un listener debe reutilizarse en varios componentes o contiene lógica compleja, podría ser más conveniente utilizar una clase con nombre.
+En este proyecto, `SharedPreferences` es el mecanismo que permite conservar los datos entre distintas ejecuciones.
+
+## Recuperación de información
+
+Los datos se recuperan mediante `getString()`:
+
+```java
+String pesoGuardado = misDatos.getString("peso", "");
+String estaturaGuardada = misDatos.getString("estatura", "");
+```
+
+Cada llamada recibe:
+
+1. La clave del valor que se desea recuperar.
+2. El valor predeterminado que se utilizará si la clave no existe.
+
+En este caso, el valor predeterminado es una cadena vacía.
+
+Los valores recuperados se colocan nuevamente en los campos:
+
+```java
+edtPeso.setText(pesoGuardado);
+edtEstatura.setText(estaturaGuardada);
+```
+
+## Recuperación en `onCreate()`
+
+Cuando se crea la actividad, las preferencias deben abrirse después de cargar la interfaz y obtener las referencias de los componentes:
+
+```java
+misDatos = getSharedPreferences("Datos", MODE_PRIVATE);
+restaurarDatos();
+```
+
+El método auxiliar puede concentrar la recuperación:
+
+```java
+private void restaurarDatos() {
+    // Leer las preferencias y actualizar los EditText.
+}
+```
+
+De esta forma, si la aplicación fue cerrada y posteriormente ejecutada otra vez, el peso y la estatura aparecen nuevamente en la interfaz.
+
+## Recuperación en `onResume()`
+
+También es posible actualizar los campos cuando la actividad regresa al primer plano:
+
+```java
+@Override
+protected void onResume() {
+    super.onResume();
+    restaurarDatos();
+}
+```
+
+Este método se ejecuta cuando la actividad vuelve a estar disponible para interactuar con el usuario.
+
+Si los valores solo pueden modificarse desde esta actividad, recuperarlos en `onCreate()` suele ser suficiente. `onResume()` resulta útil cuando otra parte de la aplicación también puede modificar las preferencias.
+
+## Flujo de persistencia
+
+1. La actividad crea o abre el archivo de preferencias `Datos`.
+2. Se recuperan los valores asociados con `peso` y `estatura`.
+3. Los valores se muestran en los campos correspondientes.
+4. El usuario modifica la información.
+5. La actividad entra en pausa.
+6. Los textos se guardan mediante un `SharedPreferences.Editor`.
+7. Los cambios se aplican con `apply()`.
+8. En la siguiente ejecución, la información se recupera mediante `getString()`.
+
+## Ventajas de `SharedPreferences`
+
+- Tiene una implementación sencilla.
+- Almacena información como pares clave-valor.
+- Conserva los datos después de cerrar la aplicación.
+- Permite recuperar valores desde distintos componentes de la aplicación.
+- Resulta apropiado para preferencias y pequeñas cantidades de información.
+- No requiere crear ni administrar una base de datos.
+
+## Limitaciones
+
+`SharedPreferences` está diseñado para datos pequeños y simples, como:
+
+- Preferencias del usuario.
+- Opciones de configuración.
+- Banderas booleanas.
+- Cadenas y valores numéricos sencillos.
+
+No es la alternativa adecuada para:
+
+- Grandes cantidades de información.
+- Datos relacionados entre sí.
+- Listas complejas de objetos.
+- Información que requiere consultas o búsquedas avanzadas.
+
+Para esos casos debe utilizarse una solución como una base de datos.
+
+## Consideraciones de seguridad
+
+Aunque `MODE_PRIVATE` impide que otras aplicaciones accedan normalmente al archivo, no debe utilizarse `SharedPreferences` sin protección adicional para guardar:
+
+- Contraseñas.
+- Tokens de acceso.
+- Información bancaria.
+- Datos personales sensibles.
 
 ## Alcance de esta actualización
 
 Esta actualización incluye:
 
-- [x] Sustitución de la clase anónima por una expresión lambda.
-- [x] Registro del evento mediante `setOnClickListener()`.
-- [x] Uso del parámetro `view`.
-- [x] Invocación de `calculaBMI()` desde la lambda.
-- [x] Conservación del cálculo en un método independiente.
-- [x] Reducción del código necesario para gestionar el evento.
-
-Todavía no se incluyen:
-
-- Validación de campos vacíos.
-- Manejo de valores incorrectos.
-- Clasificación del resultado del BMI.
-- Persistencia de información.
-- Manejo de cambios de configuración.
+- [x] Declaración de un objeto `SharedPreferences`.
+- [x] Creación o apertura del archivo de preferencias `Datos`.
+- [x] Uso de `MODE_PRIVATE`.
+- [x] Recuperación del peso y la estatura.
+- [x] Restauración de valores en los componentes `EditText`.
+- [x] Creación de un objeto `SharedPre 
