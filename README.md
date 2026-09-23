@@ -1,120 +1,148 @@
-## Gestión de eventos mediante una clase anónima
+## Gestión de eventos mediante expresiones lambda
 
-En esta actualización, el evento `click` del botón se gestiona mediante una **clase anónima**.
+En esta actualización, la clase anónima utilizada para gestionar el evento `click` se sustituye por una **expresión lambda**.
 
-Una clase anónima es una clase sin nombre que se declara y se instancia al mismo tiempo. En este proyecto, la clase anónima implementa `View.OnClickListener` directamente durante el registro del listener.
+Una expresión lambda es una forma breve de implementar una función que se utilizará en un lugar específico. En Java, puede emplearse con interfaces funcionales, es decir, interfaces que contienen un único método abstracto.
 
-Este enfoque elimina la necesidad de mantener la clase interna `CalculaBMI`.
+`View.OnClickListener` es una interfaz funcional porque define solamente el método:
+
+```java
+void onClick(View view);
+```
+
+Por esta razón, su implementación puede representarse mediante una expresión lambda.
+
+## Sintaxis de una expresión lambda
+
+La estructura general de una expresión lambda es:
+
+```java
+parámetros -> acción
+```
+
+En el listener del botón se utiliza:
+
+```java
+view -> calculaBMI()
+```
+
+Sus elementos son:
+
+- `view`: parámetro recibido por el método `onClick()`.
+- `->`: operador lambda que separa los parámetros de la implementación.
+- `calculaBMI()`: acción que se ejecuta cuando ocurre el evento.
 
 ## Registro del listener
 
-Después de obtener la referencia al botón, se crea una clase anónima dentro de `setOnClickListener()`:
+El botón registra el listener mediante una sola instrucción:
 
 ```java
-btnCalculo.setOnClickListener(new View.OnClickListener() {
-    // Implementación de onClick()
-});
+btnCalculo.setOnClickListener(view -> calculaBMI());
 ```
 
-La expresión:
+Cuando el usuario presiona el botón:
+
+1. Android detecta el evento `click`.
+2. Se ejecuta la expresión lambda.
+3. La lambda recibe el objeto `View` que generó el evento.
+4. Se invoca el método `calculaBMI()`.
+5. La aplicación calcula y muestra el BMI.
+
+## Cambio respecto a la clase anónima
+
+En la versión anterior, el listener se implementaba mediante una clase anónima:
 
 ```java
-new View.OnClickListener()
-```
-
-crea una instancia anónima de una clase que implementa la interfaz `View.OnClickListener`.
-
-Como esta interfaz define el método `onClick()`, la clase anónima debe proporcionar su implementación:
-
-```java
-@Override
-public void onClick(View view) {
-    calculaBMI();
+new View.OnClickListener() {
+    @Override
+    public void onClick(View view) {
+        calculaBMI();
+    }
 }
 ```
 
-Cuando el usuario presiona el botón, Android ejecuta el método `onClick()` de esta clase anónima, que a su vez invoca `calculaBMI()`.
-
-## Cambios respecto a la clase interna
-
-En la versión anterior se utilizaba una clase interna con nombre:
+La expresión lambda representa el mismo comportamiento:
 
 ```java
-private class CalculaBMI implements View.OnClickListener
-```
-
-Posteriormente, se creaba una instancia para registrarla como listener:
-
-```java
-btnCalculo.setOnClickListener(new CalculaBMI());
+view -> calculaBMI()
 ```
 
 En esta actualización:
 
-- Se elimina la clase interna `CalculaBMI`.
-- Se elimina la expresión `new CalculaBMI()`.
-- La implementación de `View.OnClickListener` se coloca directamente en `setOnClickListener()`.
-- El método `onClick()` se declara dentro de la clase anónima.
-- `onClick()` continúa invocando el método `calculaBMI()` de la actividad.
+- Se elimina la declaración explícita de `new View.OnClickListener()`.
+- Se elimina la anotación `@Override`.
+- Se elimina la declaración explícita del método `onClick()`.
+- Se conserva el parámetro `view`.
+- Se conserva la llamada a `calculaBMI()`.
+- El código del listener se vuelve más breve.
 
-## Flujo del evento
+## Lambdas con varias instrucciones
 
-1. `MainActivity` obtiene la referencia al botón `btnCalculo`.
-2. Se crea una clase anónima que implementa `View.OnClickListener`.
-3. La instancia anónima se registra mediante `setOnClickListener()`.
-4. El usuario presiona el botón.
-5. El botón genera el evento `click`.
-6. Android ejecuta el método `onClick()` de la clase anónima.
-7. `onClick()` invoca `calculaBMI()`.
-8. La aplicación calcula el BMI y muestra el resultado.
-
-## Ventajas de una clase anónima
-
-- Evita declarar una clase interna con nombre.
-- Mantiene el listener cerca del componente que genera el evento.
-- Reduce la cantidad de elementos declarados en la actividad.
-- Resulta apropiada cuando el listener se utiliza una sola vez.
-- Puede acceder a los atributos y métodos de `MainActivity`.
-- Facilita la lectura de listeners breves y específicos.
-
-## Consideraciones
-
-Una clase anónima no puede instanciarse posteriormente por su nombre ni reutilizarse directamente en otros lugares.
-
-Este enfoque es adecuado cuando:
-
-- El listener se utiliza una sola vez.
-- La implementación de `onClick()` es breve.
-- La lógica del evento pertenece exclusivamente al componente registrado.
-
-Si el listener contiene muchas instrucciones o debe utilizarse en varios componentes, puede ser más conveniente utilizar una clase con nombre.
-
-La operación principal se mantiene en el método `calculaBMI()`. De esta manera, la clase anónima solo recibe el evento y delega el procesamiento:
+Cuando una lambda ejecuta una sola instrucción, no necesita llaves:
 
 ```java
-@Override
-public void onClick(View view) {
+view -> calculaBMI()
+```
+
+Si debe ejecutar varias instrucciones, se utiliza un bloque:
+
+```java
+view -> {
     calculaBMI();
+    // Otra instrucción
 }
 ```
 
-Esta separación evita colocar toda la lógica del cálculo dentro del listener.
+Las instrucciones del bloque deben terminar con punto y coma.
+
+## Parámetro no utilizado
+
+La interfaz `View.OnClickListener` proporciona el componente que generó el evento mediante el parámetro `view`.
+
+Aunque el cálculo actual no utiliza directamente este parámetro, debe declararse porque forma parte de la firma de `onClick()`:
+
+```java
+view -> calculaBMI()
+```
+
+Si un mismo listener atendiera varios componentes, `view` podría utilizarse para identificar cuál generó el evento.
+
+## Ventajas de las expresiones lambda
+
+- Reducen la cantidad de código repetitivo.
+- Evitan crear una clase interna o anónima explícita.
+- Mantienen el comportamiento cerca del componente que genera el evento.
+- Mejoran la legibilidad cuando la acción es breve.
+- Permiten expresar claramente la relación entre el evento y la acción.
+- Son apropiadas para listeners que se utilizan una sola vez.
+
+## Consideraciones
+
+Las expresiones lambda son recomendables cuando la implementación es corta y fácil de comprender.
+
+Si la lógica del evento es extensa, conviene mantenerla en un método separado y utilizar la lambda únicamente para invocarlo:
+
+```java
+view -> calculaBMI()
+```
+
+Esto evita colocar toda la lógica de cálculo dentro del listener y conserva una separación clara de responsabilidades.
+
+Si un listener debe reutilizarse en varios componentes o contiene lógica compleja, podría ser más conveniente utilizar una clase con nombre.
 
 ## Alcance de esta actualización
 
 Esta actualización incluye:
 
-- [x] Eliminación de la clase interna `CalculaBMI`.
-- [x] Creación de una clase anónima.
-- [x] Implementación de `View.OnClickListener` durante el registro.
-- [x] Implementación de `onClick()` dentro de la clase anónima.
-- [x] Invocación de `calculaBMI()` desde `onClick()`.
-- [x] Registro directo del listener mediante `setOnClickListener()`.
-- [x] Conservación de la lógica del cálculo en un método separado.
+- [x] Sustitución de la clase anónima por una expresión lambda.
+- [x] Registro del evento mediante `setOnClickListener()`.
+- [x] Uso del parámetro `view`.
+- [x] Invocación de `calculaBMI()` desde la lambda.
+- [x] Conservación del cálculo en un método independiente.
+- [x] Reducción del código necesario para gestionar el evento.
 
 Todavía no se incluyen:
 
-- Expresiones lambda.
 - Validación de campos vacíos.
 - Manejo de valores incorrectos.
 - Clasificación del resultado del BMI.
